@@ -65,12 +65,12 @@ public class DataCleaningUtils {
 		initConfig();
 		
 		Violations vios = findVios(tgtDataset, constraint);
-		System.out.println(vios);
+		System.out.println("Violations: " + vios);
 		List<Record> vioRecs = getVioRecords(tgtDataset, vios);
-		System.out.println(vioRecs);
+		System.out.println("Violation Records: " + vioRecs);
 		List<Match> matches = getMatching(constraint, vioRecs, mDataset.getRecords(), simThreshold, 
 				tgtDataset.getName(), mDataset.getName());
-		System.out.println(matches);
+		System.out.println("Matching: " + matches);
 		
 		double startTemp = Config.START_TEMP_EVP * (double) (1d);
 		Pair<Objective, Set<Objective>> obj = constructEpsObjective(constraint, mDataset);
@@ -80,6 +80,7 @@ public class DataCleaningUtils {
 				Config.IND_NORM_STRAT);
 		
 		Set<Candidate> candidates = getRecommendations (constraint, matches, search, tgtDataset, mDataset, true);
+		System.out.println("Recommendations: " + candidates);
 	}
 	
 	/*
