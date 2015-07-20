@@ -27,6 +27,7 @@ import data.cleaning.core.utils.objectives.CustomCleaningObjective;
 import data.cleaning.core.utils.objectives.Objective;
 import data.cleaning.core.utils.objectives.PrivacyObjective;
 import data.cleaning.core.utils.search.Search;
+import data.cleaning.core.utils.search.SearchType;
 import data.cleaning.core.utils.search.SimulAnnealEps;
 
 public class DataCleaningUtils {
@@ -66,8 +67,10 @@ public class DataCleaningUtils {
 		
 		Violations vios = findVios(tgtDataset, constraint);
 		System.out.println("Violations: " + vios);
+		
 		List<Record> vioRecs = getVioRecords(tgtDataset, vios);
 		System.out.println("Violation Records: " + vioRecs);
+		
 		List<Match> matches = getMatching(constraint, vioRecs, mDataset.getRecords(), simThreshold, 
 				tgtDataset.getName(), mDataset.getName());
 		System.out.println("Matching: " + matches);
@@ -80,7 +83,52 @@ public class DataCleaningUtils {
 				Config.IND_NORM_STRAT);
 		
 		Set<Candidate> candidates = getRecommendations (constraint, matches, search, tgtDataset, mDataset, true);
-		System.out.println("Recommendations: " + candidates);
+		System.out.println(candidates);
+	}
+	
+	public String runDataCleaning (TargetDataset tgtDataset, MasterDataset mDataset, float simThreshold, SearchType searchType) {
+		String result = "";
+		StringBuilder sb = new StringBuilder(result);
+		
+		List<Constraint> constraints = tgtDataset.getConstraints();
+		System.out.println("--------------Data Cleaning------------------");
+		System.out.println("Target Dataset: " + tgtDataset.toString());
+		System.out.println("Master Dataset: " + mDataset.toString());
+		System.out.println("simThreshold: " + simThreshold);
+		System.out.println("searchType: " + searchType.toString());
+		
+		for (Constraint constraint: constraints) {
+			System.out.println("--------------------------------------------");
+			System.out.println("Constraint: " + constraint.toString());
+			
+			sb.append("Constraint: " + constraint.toString() + "\n");
+			
+			Violations vios = findVios(tgtDataset, constraint);
+			System.out.println("Violations: " + vios);
+			
+			List<Record> vioRecs = getVioRecords(tgtDataset, vios);
+			System.out.println("Violation Records: " + vioRecs);
+			
+			List<Match> matches = getMatching(constraint, vioRecs, mDataset.getRecords(), simThreshold, 
+					tgtDataset.getName(), mDataset.getName());
+			System.out.println("Matching: " + matches);
+			
+			double startTemp = Config.START_TEMP_EVP * (double) (1d);
+			Pair<Objective, Set<Objective>> obj = constructEpsObjective(constraint, mDataset);
+			search = new SimulAnnealEps(obj.getO1(), obj.getO2(), startTemp,
+					Config.FINAL_TEMP_EVP, Config.ALPHA_TEMP_EVP,
+					Config.BEST_ENERGY_EVP, Config.INIT_STRATEGY,
+					Config.IND_NORM_STRAT);
+			
+			Set<Candidate> candidates = getRecommendations (constraint, matches, search, tgtDataset, mDataset, true);
+			System.out.println(candidates.toString());
+			
+			sb.append(candidates.toString() + "\n");
+			sb.append("\n");
+		}
+		
+		result = sb.toString();
+		return result;
 	}
 	
 	/*
@@ -162,7 +210,8 @@ public class DataCleaningUtils {
 		TargetDataset target = dcu.loadTargetDataset(tgtUrl, tgtFileName, fdUrl, separator, quoteChar);
 		MasterDataset master = dcu.loadMasterDataset(mUrl, mFileName, fdUrl, 1, separator, quoteChar);
 		
-		dcu.runDataCleaning(target, master, target.getConstraints().get(0));
+//		dcu.runDataCleaning(target, master, target.getConstraints().get(0));
+		dcu.runDataCleaning(target, master, 0.8f, SearchType.HC_EPS);
 	}
 	
 }
