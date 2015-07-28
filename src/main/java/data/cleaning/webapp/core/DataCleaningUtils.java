@@ -3,6 +3,7 @@ package data.cleaning.webapp.core;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import data.cleaning.core.service.dataset.DatasetService;
@@ -68,6 +69,17 @@ public class DataCleaningUtils {
 		return search;
 	}
 	
+	private Search initWeightedSimulAnneal(MasterDataset mDataset, Constraint constraint, double stTemp, double endTemp, double alpTemp, double bestEn, 
+			double alphaPvt, double betaInd, double gamaSize) {
+		double startTemp = stTemp * (double) (1d);
+		Search search = new SimulAnnealWeighted(constructWeightedObjective(
+				constraint, mDataset, alphaPvt, betaInd, gamaSize), startTemp, endTemp,
+				alpTemp, bestEn,
+				Config.INIT_STRATEGY, Config.IND_NORM_STRAT);
+		
+		return search;
+	}
+	
 	private Search initFlexibleSimulAnneal(MasterDataset mDataset, Constraint constraint) {
 		Pair<Objective, Set<Objective>> obj = constructEpsFlexibleObjectiveEVP(
 				constraint, mDataset);
@@ -75,6 +87,19 @@ public class DataCleaningUtils {
 		Search search = new SimulAnnealEpsFlexible(obj.getO1(), obj.getO2(),
 				startTemp, Config.FINAL_TEMP_EVP, Config.ALPHA_TEMP_EVP,
 				Config.BEST_ENERGY_EVP, Config.INIT_STRATEGY,
+				Config.IND_NORM_STRAT);
+		
+		return search;
+	}
+	
+	private Search initFlexibleSimulAnneal(MasterDataset mDataset, Constraint constraint, double stTemp, double endTemp, double alpTemp, double bestEn,
+			double cleaning, double size) {
+		Pair<Objective, Set<Objective>> obj = constructEpsFlexibleObjectiveEVP(
+				constraint, mDataset, cleaning, size);
+		double startTemp = stTemp * (double) (1d);
+		Search search = new SimulAnnealEpsFlexible(obj.getO1(), obj.getO2(),
+				startTemp, endTemp, alpTemp,
+				bestEn, Config.INIT_STRATEGY,
 				Config.IND_NORM_STRAT);
 		
 		return search;
@@ -92,11 +117,35 @@ public class DataCleaningUtils {
 		return search;
 	}
 	
+	private Search initDynamicSimulAnneal(MasterDataset mDataset, Constraint constraint, double stTemp, double endTemp, double alpTemp, double bestEn,
+			double cleaning, double size) {
+		double startTemp = stTemp * (double) (1d);
+		Pair<Objective, Set<Objective>> obj = constructEpsDynamicObjective(
+				constraint, mDataset, cleaning, size);
+		search = new SimulAnnealEpsDynamic(obj.getO1(), obj.getO2(),
+				startTemp, endTemp, alpTemp,
+				bestEn, Config.INIT_STRATEGY,
+				Config.IND_NORM_STRAT);
+		
+		return search;
+	}
+	
 	private Search initLexicalSimulAnneal(MasterDataset mDataset, Constraint constraint) {
 		double startTemp = Config.START_TEMP_EVP * (double) (1d);
 		Search search = new SimulAnnealEpsLex(constructEpsLexObjective(constraint,
 				mDataset), startTemp, Config.FINAL_TEMP, Config.ALPHA_TEMP,
 				Config.BEST_ENERGY, Config.INIT_STRATEGY,
+				Config.IND_NORM_STRAT);
+		
+		return search;
+	}
+	
+	private Search initLexicalSimulAnneal(MasterDataset mDataset, Constraint constraint, double stTemp, double endTemp, double alpTemp, double bestEn,
+			double privacy, double cleaning) {
+		double startTemp = stTemp * (double) (1d);
+		Search search = new SimulAnnealEpsLex(constructEpsLexObjective(constraint,
+				mDataset, privacy, cleaning), startTemp, endTemp, alpTemp,
+				bestEn, Config.INIT_STRATEGY,
 				Config.IND_NORM_STRAT);
 		
 		return search;
@@ -141,6 +190,26 @@ public class DataCleaningUtils {
 		return p;
 	}
 	
+	private Pair<Objective, Set<Objective>> constructEpsFlexibleObjectiveEVP(
+			Constraint constraint, MasterDataset mDataset, double cleaning, double size) {
+		InfoContentTable table = datasetService.calcInfoContentTable(constraint, mDataset);
+
+		Objective pvtFn = new PrivacyObjective(0d, 0d, true, constraint, table);
+		Objective cleanFn = new CustomCleaningObjective(
+				cleaning, 0d, true, constraint, table);
+		Objective changesFn = new ChangesObjective(size,
+				0d, true, constraint, table);
+		Set<Objective> constraintFns = new HashSet<Objective>();
+		constraintFns.add(cleanFn);
+		constraintFns.add(changesFn);
+
+		Pair<Objective, Set<Objective>> p = new Pair<Objective, Set<Objective>>();
+		p.setO1(pvtFn);
+		p.setO2(constraintFns);
+
+		return p;
+	}
+	
 	private List<Objective> constructWeightedObjective(Constraint constraint,
 			MasterDataset mDataset) {
 		InfoContentTable table = datasetService.calcInfoContentTable(constraint, mDataset);
@@ -150,6 +219,23 @@ public class DataCleaningUtils {
 		Objective indFn = new CustomCleaningObjective(0d, Config.BETA_IND,
 				true, constraint, table);
 		Objective changesFn = new ChangesObjective(0d, Config.GAMMA_SIZE, true,
+				constraint, table);
+		weightedFns.add(pvtFn);
+		weightedFns.add(indFn);
+		weightedFns.add(changesFn);
+
+		return weightedFns;
+	}
+	
+	private List<Objective> constructWeightedObjective(Constraint constraint,
+			MasterDataset mDataset, double alphaPvt, double betaInd, double gamaSize) {
+		InfoContentTable table = datasetService.calcInfoContentTable(constraint, mDataset);
+		List<Objective> weightedFns = new ArrayList<Objective>();
+		Objective pvtFn = new PrivacyObjective(0d, alphaPvt, true,
+				constraint, table);
+		Objective indFn = new CustomCleaningObjective(0d, betaInd,
+				true, constraint, table);
+		Objective changesFn = new ChangesObjective(0d, gamaSize, true,
 				constraint, table);
 		weightedFns.add(pvtFn);
 		weightedFns.add(indFn);
@@ -175,12 +261,49 @@ public class DataCleaningUtils {
 		return fns;
 	}
 	
+	private List<Objective> constructEpsLexObjective(Constraint constraint,MasterDataset mDataset,
+			double privacy, double cleaning) {
+		InfoContentTable table = datasetService.calcInfoContentTable(constraint, mDataset);
+		Objective pvtFn = new PrivacyObjective(privacy, 0d,
+				true, constraint, table);
+		Objective cleanFn = new CustomCleaningObjective(
+				cleaning, 0d, true, constraint, table);
+		Objective changesFn = new ChangesObjective(0d, 0d, true, constraint,
+				table);
+
+		List<Objective> fns = new ArrayList<Objective>();
+		fns.add(pvtFn);
+		fns.add(cleanFn);
+		fns.add(changesFn);
+
+		return fns;
+	}
+	
 	private Pair<Objective, Set<Objective>> constructEpsDynamicObjective(Constraint constraint, MasterDataset mDataset) {
 		InfoContentTable table = datasetService.calcInfoContentTable(constraint, mDataset);
 		Objective pvtFn = new PrivacyObjective(0d, 0d, false, constraint, table);
 		Objective cleanFn = new CustomCleaningObjective(
 				Config.EPSILON_PREV_CLEANING, 0d, false, constraint, table);
 		Objective changesFn = new ChangesObjective(Config.EPSILON_PREV_SIZE,
+				0d, false, constraint, table);
+		Set<Objective> constraintFns = new HashSet<Objective>();
+		constraintFns.add(cleanFn);
+		constraintFns.add(changesFn);
+
+		Pair<Objective, Set<Objective>> p = new Pair<Objective, Set<Objective>>();
+		p.setO1(pvtFn);
+		p.setO2(constraintFns);
+
+		return p;
+	}
+	
+	private Pair<Objective, Set<Objective>> constructEpsDynamicObjective(Constraint constraint, MasterDataset mDataset,
+			double cleaning, double size) {
+		InfoContentTable table = datasetService.calcInfoContentTable(constraint, mDataset);
+		Objective pvtFn = new PrivacyObjective(0d, 0d, false, constraint, table);
+		Objective cleanFn = new CustomCleaningObjective(
+				cleaning, 0d, false, constraint, table);
+		Objective changesFn = new ChangesObjective(size,
 				0d, false, constraint, table);
 		Set<Objective> constraintFns = new HashSet<Objective>();
 		constraintFns.add(cleanFn);
@@ -250,6 +373,93 @@ public class DataCleaningUtils {
 			}
 			else if (searchType == SearchType.SA_EPS_FLEX) {
 				search = initFlexibleSimulAnneal(mDataset, constraint);
+			}
+			else {
+				search = initSimulAnneal(mDataset, constraint);
+			}
+			
+			Set<Candidate> candidates = getRecommendations (constraint, matches, search, tgtDataset, mDataset, true);
+			System.out.println(candidates.toString());
+			
+			sb.append(candidates.toString() + "\n");
+			sb.append("\n");
+		}
+		
+		result = sb.toString();
+		return result;
+	}
+	
+	public String runDataCleaning (TargetDataset tgtDataset, MasterDataset mDataset, float simThreshold, SearchType searchType, Map<String, Double> params) {
+		String result = "";
+		StringBuilder sb = new StringBuilder(result);
+		
+		List<Constraint> constraints = tgtDataset.getConstraints();
+		System.out.println("--------------Data Cleaning------------------");
+		System.out.println("Target Dataset: " + tgtDataset.toString());
+		System.out.println("Master Dataset: " + mDataset.toString());
+		System.out.println("simThreshold: " + simThreshold);
+		System.out.println("searchType: " + searchType.toString());
+		
+		for (Constraint constraint: constraints) {
+			System.out.println("--------------------------------------------");
+			System.out.println("Constraint: " + constraint.toString());
+			
+			sb.append("Constraint: " + constraint.toString() + "\n");
+			
+			Violations vios = findVios(tgtDataset, constraint);
+			System.out.println("Violations: " + vios);
+			
+			List<Record> vioRecs = getVioRecords(tgtDataset, vios);
+			System.out.println("Violation Records: " + vioRecs);
+			
+			List<Match> matches = getMatching(constraint, vioRecs, mDataset.getRecords(), simThreshold, 
+					tgtDataset.getName(), mDataset.getName());
+			System.out.println("Matching: " + matches);
+			
+			if (searchType == SearchType.SA_WEIGHTED) {
+				double stTemp = params.get("stTemp");
+				double endTemp = params.get("endTemp");
+				double alpTemp = params.get("alpTemp");
+				double bestEn = params.get("bestEn");
+				double alphaPvt = params.get("alphaPvt");
+				double betaInd = params.get("betaInd");
+				double gamaSize = params.get("gamaSize");
+				
+				search = initWeightedSimulAnneal(mDataset, constraint, stTemp, endTemp, alpTemp, bestEn, 
+						alphaPvt, betaInd, gamaSize);
+			}
+			else if (searchType == SearchType.SA_EPS_DYNAMIC) {
+				double stTemp = params.get("stTemp");
+				double endTemp = params.get("endTemp");
+				double alpTemp = params.get("alpTemp");
+				double bestEn = params.get("bestEn");
+				double cleaning = params.get("cleaning");
+				double size = params.get("size");
+				
+				search = initDynamicSimulAnneal(mDataset, constraint, stTemp, endTemp, alpTemp, bestEn, 
+						cleaning, size);
+			}
+			else if (searchType == SearchType.SA_EPS_LEX) {
+				double stTemp = params.get("stTemp");
+				double endTemp = params.get("endTemp");
+				double alpTemp = params.get("alpTemp");
+				double bestEn = params.get("bestEn");
+				double privacy = params.get("privacy");
+				double cleaning = params.get("cleaning");
+				
+				search = initLexicalSimulAnneal(mDataset, constraint, stTemp, endTemp, alpTemp, bestEn,
+						privacy, cleaning);
+			}
+			else if (searchType == SearchType.SA_EPS_FLEX) {
+				double stTemp = params.get("stTemp");
+				double endTemp = params.get("endTemp");
+				double alpTemp = params.get("alpTemp");
+				double bestEn = params.get("bestEn");
+				double cleaning = params.get("cleaning");
+				double size = params.get("size");
+				
+				search = initFlexibleSimulAnneal(mDataset, constraint, stTemp, endTemp, alpTemp, bestEn, 
+						cleaning, size);
 			}
 			else {
 				search = initSimulAnneal(mDataset, constraint);
