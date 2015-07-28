@@ -80,7 +80,7 @@ public class DataCleaningUtils {
 		return search;
 	}
 	
-	private Search initLexicalSimulAnneal(MasterDataset mDataset, Constraint constraint) {
+	private Search initDynamicSimulAnneal(MasterDataset mDataset, Constraint constraint) {
 		double startTemp = Config.START_TEMP_EVP * (double) (1d);
 		Pair<Objective, Set<Objective>> obj = constructEpsDynamicObjective(
 				constraint, mDataset);
@@ -92,7 +92,7 @@ public class DataCleaningUtils {
 		return search;
 	}
 	
-	private Search initDynamicSimulAnneal(MasterDataset mDataset, Constraint constraint) {
+	private Search initLexicalSimulAnneal(MasterDataset mDataset, Constraint constraint) {
 		double startTemp = Config.START_TEMP_EVP * (double) (1d);
 		Search search = new SimulAnnealEpsLex(constructEpsLexObjective(constraint,
 				mDataset), startTemp, Config.FINAL_TEMP, Config.ALPHA_TEMP,
