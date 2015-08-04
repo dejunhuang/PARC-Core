@@ -34,8 +34,9 @@ import data.cleaning.core.utils.search.SimulAnnealEpsDynamic;
 import data.cleaning.core.utils.search.SimulAnnealEpsFlexible;
 import data.cleaning.core.utils.search.SimulAnnealEpsLex;
 import data.cleaning.core.utils.search.SimulAnnealWeighted;
+import data.cleaning.webapp.core.DataCleaningUtils;
 
-public class DataCleaningUtilsImpl {
+public class DataCleaningUtilsImpl implements DataCleaningUtils{
 	private DatasetService datasetService = new DatasetServiceImpl();
 	private RepairService repairService = new RepairServiceImpl();
 	private MatchingService matchingService = new MatchingServiceImpl();
