@@ -1,4 +1,4 @@
-package data.cleaning.webapp.core;
+package data.cleaning.webapp.core.implementation;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -35,7 +35,7 @@ import data.cleaning.core.utils.search.SimulAnnealEpsFlexible;
 import data.cleaning.core.utils.search.SimulAnnealEpsLex;
 import data.cleaning.core.utils.search.SimulAnnealWeighted;
 
-public class DataCleaningUtils {
+public class DataCleaningUtilsImpl {
 	private DatasetService datasetService = new DatasetServiceImpl();
 	private RepairService repairService = new RepairServiceImpl();
 	private MatchingService matchingService = new MatchingServiceImpl();
@@ -398,7 +398,7 @@ public class DataCleaningUtils {
 	}
 	
 	public static void main (String[] args) {
-		DataCleaningUtils dcu = new DataCleaningUtils();
+		DataCleaningUtilsImpl dcu = new DataCleaningUtilsImpl();
 		
 		char separator = ',';
 		char quoteChar = '"';
