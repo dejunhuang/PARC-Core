@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.Multimap;
+
 import data.cleaning.core.service.dataset.DatasetService;
 import data.cleaning.core.service.dataset.impl.Constraint;
 import data.cleaning.core.service.dataset.impl.Dataset;
@@ -343,6 +345,24 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 		List<Record> records = tgtDataset.getRecords();
 		Violations allViols = repairService.calcViolations(records, constraint);
 		return allViols;
+	}
+	
+	/**
+	 * output the violations in a specific format
+	 * @return
+	 */
+	public String outputViolations (Violations v, Constraint con) {
+		StringBuilder sb = new StringBuilder();
+		
+		List<String> cols = con.getColsInConstraint();
+		
+		Multimap<String, Record> map = v.getViolMap();
+		for (Record r: map.values()) {
+			String s = r.prettyPrintRecord(cols);
+			sb.append(s + "\n");
+		}
+		
+		return sb.toString();
 	}
 	
 	//get list of records that have violations in the original dataset
