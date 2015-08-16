@@ -2,6 +2,7 @@ package data.cleaning.webapp.core.implementation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -440,6 +441,119 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 			MasterDataset mDataset, boolean shdReturnInit) {
 		InfoContentTable table = datasetService.calcInfoContentTable(constraint, mDataset);
 		return repairService.calcOptimalSolns(constraint, tgtMatches, search, tgtDataset, mDataset, table, shdReturnInit);
+	}
+	
+	/*
+	 * run the whole data cleaning process with parameter
+	 */
+	public List<Map<Constraint, Set<Candidate>>> runDataCleaningList (TargetDataset tgtDataset, MasterDataset mDataset, float simThreshold, SearchType searchType, Map<String, Double> params) {
+		List<Map<Constraint, Set<Candidate>>> result = new ArrayList<Map<Constraint, Set<Candidate>>>();
+		
+		List<Constraint> constraints = tgtDataset.getConstraints();
+		System.out.println("--------------Data Cleaning------------------");
+		System.out.println("Target Dataset: " + tgtDataset.toString());
+		System.out.println("Master Dataset: " + mDataset.toString());
+		System.out.println("simThreshold: " + simThreshold);
+		System.out.println("searchType: " + searchType.toString());
+		
+		for (Constraint constraint: constraints) {
+			Map<Constraint, Set<Candidate>> map = new HashMap<Constraint, Set<Candidate>>();
+			
+			System.out.println("--------------------------------------------");
+			System.out.println("Constraint: " + constraint.toString());
+			
+			Violations vios = findVios(tgtDataset, constraint);
+			System.out.println("Violations: " + vios);
+			
+			List<Record> vioRecs = getVioRecords(tgtDataset, vios);
+			System.out.println("Violation Records: " + vioRecs);
+			
+			List<Match> matches = getMatching(constraint, vioRecs, mDataset.getRecords(), simThreshold, 
+					tgtDataset.getName(), mDataset.getName());
+			System.out.println("Matching: " + matches);
+			
+			Search search;
+			if (searchType == SearchType.SA_WEIGHTED) {
+				if (params == null) {
+					search = initWeightedSimulAnneal(mDataset, constraint);
+				}
+				else {
+					double stTemp = params.get("stTemp");
+					double endTemp = params.get("endTemp");
+					double alpTemp = params.get("alpTemp");
+					double bestEn = params.get("bestEn");
+					double alphaPvt = params.get("alphaPvt");
+					double betaInd = params.get("betaInd");
+					double gamaSize = params.get("gamaSize");
+					
+					search = initWeightedSimulAnneal(mDataset, constraint, stTemp, endTemp, alpTemp, bestEn, 
+							alphaPvt, betaInd, gamaSize);
+				}
+			}
+			else if (searchType == SearchType.SA_EPS_DYNAMIC) {
+				if (params == null) {
+					search = initDynamicSimulAnneal(mDataset, constraint);
+				}
+				else {
+					double stTemp = params.get("stTemp");
+					double endTemp = params.get("endTemp");
+					double alpTemp = params.get("alpTemp");
+					double bestEn = params.get("bestEn");
+					double cleaning = params.get("cleaning");
+					double size = params.get("size");
+					
+					search = initDynamicSimulAnneal(mDataset, constraint, stTemp, endTemp, alpTemp, bestEn, 
+							cleaning, size);
+				}
+			}
+			else if (searchType == SearchType.SA_EPS_LEX) {
+				if (params == null) {
+					search = initLexicalSimulAnneal(mDataset, constraint);
+				}
+				else {
+					double stTemp = params.get("stTemp");
+					double endTemp = params.get("endTemp");
+					double alpTemp = params.get("alpTemp");
+					double bestEn = params.get("bestEn");
+					double privacy = params.get("privacy");
+					double cleaning = params.get("cleaning");
+					
+					search = initLexicalSimulAnneal(mDataset, constraint, stTemp, endTemp, alpTemp, bestEn,
+							privacy, cleaning);
+				}
+			}
+			else if (searchType == SearchType.SA_EPS_FLEX) {
+				if (params == null) {
+					search = initFlexibleSimulAnneal(mDataset, constraint);
+				}
+				else {
+					double stTemp = params.get("stTemp");
+					double endTemp = params.get("endTemp");
+					double alpTemp = params.get("alpTemp");
+					double bestEn = params.get("bestEn");
+					double cleaning = params.get("cleaning");
+					double size = params.get("size");
+					
+					search = initFlexibleSimulAnneal(mDataset, constraint, stTemp, endTemp, alpTemp, bestEn, 
+							cleaning, size);
+				}
+			}
+			else {
+				search = initSimulAnneal(mDataset, constraint);
+			}
+			
+			Set<Candidate> candidates = getRecommendations (constraint, matches, search, tgtDataset, mDataset, true);
+			System.out.println(candidates.toString());
+			
+			map.put(constraint, candidates);
+			result.add(map);
+		}
+		
+		return result;
+	}
+	
+	public List<Map<Constraint, Set<Candidate>>> runDataCleaningList (TargetDataset tgtDataset, MasterDataset mDataset, float simThreshold, SearchType searchType) {
+		return runDataCleaningList(tgtDataset, mDataset, simThreshold, searchType, null);
 	}
 	
 	public static void main (String[] args) {
