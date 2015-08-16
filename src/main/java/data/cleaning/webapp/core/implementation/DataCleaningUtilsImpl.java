@@ -1,6 +1,7 @@
 package data.cleaning.webapp.core.implementation;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -363,6 +364,29 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 		}
 		
 		return sb.toString();
+	}
+	
+	/**
+	 * output the violations in a specific format
+	 * @return
+	 */
+	public List<List<String>> outputViolationsList (Violations v, Constraint con) {
+		List<List<String>> result = new ArrayList<List<String>>();
+		
+		List<String> cols = con.getColsInConstraint();
+		
+		Multimap<String, Record> map = v.getViolMap();
+		
+		for (Record r: map.values()) {
+			String s = r.getRecordStr(cols, ",");
+			String[] sArray = s.split(",");
+			List<String> sList = new ArrayList<String>();
+			sList.add(Long.toString(r.getId()));
+			sList.addAll(Arrays.asList(sArray));
+			result.add(sList);
+		}
+		
+		return result;
 	}
 	
 	//get list of records that have violations in the original dataset
