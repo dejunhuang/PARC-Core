@@ -446,8 +446,8 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 	/*
 	 * run the whole data cleaning process with parameter
 	 */
-	public List<Map<Constraint, Set<Candidate>>> runDataCleaningList (TargetDataset tgtDataset, MasterDataset mDataset, float simThreshold, SearchType searchType, Map<String, Double> params) {
-		List<Map<Constraint, Set<Candidate>>> result = new ArrayList<Map<Constraint, Set<Candidate>>>();
+	public Map<Constraint, Set<Candidate>> runDataCleaningMap (TargetDataset tgtDataset, MasterDataset mDataset, float simThreshold, SearchType searchType, Map<String, Double> params) {
+		Map<Constraint, Set<Candidate>> result = new HashMap<Constraint, Set<Candidate>>();
 		
 		List<Constraint> constraints = tgtDataset.getConstraints();
 		System.out.println("--------------Data Cleaning------------------");
@@ -457,8 +457,6 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 		System.out.println("searchType: " + searchType.toString());
 		
 		for (Constraint constraint: constraints) {
-			Map<Constraint, Set<Candidate>> map = new HashMap<Constraint, Set<Candidate>>();
-			
 			System.out.println("--------------------------------------------");
 			System.out.println("Constraint: " + constraint.toString());
 			
@@ -545,15 +543,14 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 			Set<Candidate> candidates = getRecommendations (constraint, matches, search, tgtDataset, mDataset, true);
 			System.out.println(candidates.toString());
 			
-			map.put(constraint, candidates);
-			result.add(map);
+			result.put(constraint, candidates);
 		}
 		
 		return result;
 	}
 	
-	public List<Map<Constraint, Set<Candidate>>> runDataCleaningList (TargetDataset tgtDataset, MasterDataset mDataset, float simThreshold, SearchType searchType) {
-		return runDataCleaningList(tgtDataset, mDataset, simThreshold, searchType, null);
+	public Map<Constraint, Set<Candidate>> runDataCleaningMap (TargetDataset tgtDataset, MasterDataset mDataset, float simThreshold, SearchType searchType) {
+		return runDataCleaningMap(tgtDataset, mDataset, simThreshold, searchType, null);
 	}
 	
 	public static void main (String[] args) {
