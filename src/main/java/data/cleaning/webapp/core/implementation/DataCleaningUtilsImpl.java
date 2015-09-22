@@ -322,8 +322,21 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 				search = initSimulAnneal(mDataset, constraint);
 			}
 			
-			Set<Candidate> candidates = getRecommendations (constraint, matches, search, tgtDataset, mDataset, true);
+			Set<Candidate> candidates = getRecommendations (constraint, matches, search, tgtDataset, mDataset, false);
+			
 			System.out.println(candidates.toString());
+			
+			//TODO: Delete this code later
+			// for testing
+			for (Candidate c: candidates) {
+				System.out.println("---------------------");
+				System.out.println(c.getDebugging());
+				System.out.println(c.toString());
+				System.out.println("Pvt: " + c.getPvtOut());
+				System.out.println("inD: " + c.getIndOut());
+				System.out.println("Changes: " + c.getChangesOut());
+				System.out.println();
+			}
 			
 			sb.append(candidates.toString() + "\n");
 			sb.append("\n");
@@ -332,7 +345,7 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 		result = sb.toString();
 		return result;
 	}
-	
+
 	/*
 	 * run the whole data cleaning process without parameter, using default paramters
 	 */
@@ -540,7 +553,7 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 				search = initSimulAnneal(mDataset, constraint);
 			}
 			
-			Set<Candidate> candidates = getRecommendations (constraint, matches, search, tgtDataset, mDataset, true);
+			Set<Candidate> candidates = getRecommendations (constraint, matches, search, tgtDataset, mDataset, false);
 			System.out.println(candidates.toString());
 			
 			result.put(constraint, candidates);
@@ -559,19 +572,23 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 		char separator = ',';
 		char quoteChar = '"';
 		
-		String tgtUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/testdata1/addressTarget.csv";
+//		String tgtUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/testdata1/addressTarget.csv";
+		String tgtUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0922/target.csv";
 		String tgtFileName = "addressTarget";
 
-		String mUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/testdata1/addressMaster.csv";
+//		String mUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/testdata1/addressMaster.csv";
+		String mUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0922/master.csv";
 		String mFileName = "addressMaster";
 		
-		String fdUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/testdata1/address_fd.csv";
+//		String fdUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/testdata1/address_fd.csv";
+		String fdUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0922/fd.csv";
 		
 		TargetDataset target = dcu.loadTargetDataset(tgtUrl, tgtFileName, fdUrl, separator, quoteChar);
 		MasterDataset master = dcu.loadMasterDataset(mUrl, mFileName, fdUrl, 1, separator, quoteChar);
 		
 //		dcu.runDataCleaning(target, master, target.getConstraints().get(0));
-		dcu.runDataCleaning(target, master, 0.8f, SearchType.SA_WEIGHTED);
+		dcu.runDataCleaning(target, master, 0.00001f, SearchType.SA_WEIGHTED);
+//		dcu.runDataCleaning(target, master, 0.00001f, SearchType.SA_EPS_DYNAMIC);
 	}
 	
 }
