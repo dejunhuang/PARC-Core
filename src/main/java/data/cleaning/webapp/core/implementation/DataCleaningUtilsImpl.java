@@ -31,6 +31,7 @@ import data.cleaning.core.utils.objectives.ChangesObjective;
 import data.cleaning.core.utils.objectives.CustomCleaningObjective;
 import data.cleaning.core.utils.objectives.Objective;
 import data.cleaning.core.utils.objectives.PrivacyObjective;
+import data.cleaning.core.utils.search.BruteForceSearch;
 import data.cleaning.core.utils.search.Search;
 import data.cleaning.core.utils.search.SearchType;
 import data.cleaning.core.utils.search.SimulAnnealEps;
@@ -70,7 +71,7 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 	
 	private Search initWeightedSimulAnneal(MasterDataset mDataset, Constraint constraint) {
 		return initWeightedSimulAnneal(mDataset, constraint, 
-				Config.START_TEMP_EVP, Config.FINAL_TEMP, Config.ALPHA_TEMP, Config.BEST_ENERGY, 
+				Config.START_TEMP, Config.FINAL_TEMP, Config.ALPHA_TEMP, Config.BEST_ENERGY, 
 				Config.ALPHA_PVT, Config.BETA_IND, Config.GAMMA_SIZE);
 	}
 	
@@ -318,6 +319,9 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 							cleaning, size);
 				}
 			}
+			else if (searchType == SearchType.BRUTE_FORCE) {
+				search = new BruteForceSearch();
+			}
 			else {
 				search = initSimulAnneal(mDataset, constraint);
 			}
@@ -330,7 +334,7 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 			// for testing
 			for (Candidate c: candidates) {
 				System.out.println("---------------------");
-				System.out.println(c.getDebugging());
+//				System.out.println(c.getDebugging());
 				System.out.println(c.toString());
 				System.out.println("Pvt: " + c.getPvtOut());
 				System.out.println("inD: " + c.getIndOut());
@@ -549,6 +553,9 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 							cleaning, size);
 				}
 			}
+			else if (searchType == SearchType.BRUTE_FORCE) {
+				search = new BruteForceSearch();
+			}
 			else {
 				search = initSimulAnneal(mDataset, constraint);
 			}
@@ -573,21 +580,22 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 		char quoteChar = '"';
 		
 //		String tgtUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/testdata1/addressTarget.csv";
-		String tgtUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0922/target.csv";
+		String tgtUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0923/target_0923.csv";
 		String tgtFileName = "addressTarget";
 
 //		String mUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/testdata1/addressMaster.csv";
-		String mUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0922/master.csv";
+		String mUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0923/master_0923.csv";
 		String mFileName = "addressMaster";
 		
 //		String fdUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/testdata1/address_fd.csv";
-		String fdUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0922/fd.csv";
+		String fdUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0923/fd_0923.csv";
 		
 		TargetDataset target = dcu.loadTargetDataset(tgtUrl, tgtFileName, fdUrl, separator, quoteChar);
 		MasterDataset master = dcu.loadMasterDataset(mUrl, mFileName, fdUrl, 1, separator, quoteChar);
 		
 //		dcu.runDataCleaning(target, master, target.getConstraints().get(0));
-		dcu.runDataCleaning(target, master, 0.00001f, SearchType.SA_WEIGHTED);
+//		dcu.runDataCleaning(target, master, 0.6f, SearchType.SA_WEIGHTED);
+		dcu.runDataCleaning(target, master, 0.6f, SearchType.BRUTE_FORCE);
 //		dcu.runDataCleaning(target, master, 0.00001f, SearchType.SA_EPS_DYNAMIC);
 	}
 	
