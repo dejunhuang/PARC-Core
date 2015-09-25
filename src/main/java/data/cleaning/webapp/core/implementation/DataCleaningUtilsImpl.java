@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import com.google.common.collect.Multimap;
@@ -23,6 +25,8 @@ import data.cleaning.core.service.matching.impl.Match;
 import data.cleaning.core.service.matching.impl.MatchingServiceImpl;
 import data.cleaning.core.service.repair.RepairService;
 import data.cleaning.core.service.repair.impl.Candidate;
+import data.cleaning.core.service.repair.impl.Recommendation;
+import data.cleaning.core.service.repair.impl.RecommendationPattern;
 import data.cleaning.core.service.repair.impl.RepairServiceImpl;
 import data.cleaning.core.service.repair.impl.Violations;
 import data.cleaning.core.utils.Config;
@@ -44,7 +48,7 @@ import data.cleaning.webapp.core.DataCleaningUtils;
 
 public class DataCleaningUtilsImpl implements DataCleaningUtils{
 	private DatasetService datasetService = new DatasetServiceImpl();
-	private RepairService repairService = new RepairServiceImpl();
+	private RepairServiceImpl repairService = new RepairServiceImpl();
 	private MatchingService matchingService = new MatchingServiceImpl();
 	
 	private Search initBruteForceSearch(MasterDataset mDataset, Constraint constraint,  
@@ -377,6 +381,11 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 				System.out.println("Pvt: " + c.getPvtOut());
 				System.out.println("inD: " + c.getIndOut());
 				System.out.println("Changes: " + c.getChangesOut());
+				
+				List<Recommendation> rs = c.getRecommendations();
+				List<RecommendationPattern> rps = repairService.getRecommendationPatterns(rs, tgtDataset, mDataset);
+				System.out.println("RecommendationPatterns: " + rps);
+				
 				System.out.println();
 			}
 			
@@ -619,6 +628,28 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 		return runDataCleaningMap(tgtDataset, mDataset, simThreshold, searchType, null);
 	}
 	
+	public Map<Constraint, List<List<RecommendationPattern>>> runDataCleaningMapWithPatterns (TargetDataset tgtDataset, MasterDataset mDataset, float simThreshold, SearchType searchType, Map<String, Double> params) {
+		Map<Constraint, Set<Candidate>> candidatesMap = runDataCleaningMap (tgtDataset, mDataset, simThreshold, searchType,params);
+		Map<Constraint, List<List<RecommendationPattern>>> rpsMap = new HashMap<Constraint, List<List<RecommendationPattern>>>();
+		
+		for (Constraint c: candidatesMap.keySet()) {
+			List<List<RecommendationPattern>> rpsList = new ArrayList<List<RecommendationPattern>>();
+			
+			Set<Candidate> cSet = candidatesMap.get(c);
+			for (Candidate cTemp: cSet) {
+				List<RecommendationPattern> rps = repairService.getRecommendationPatterns(cTemp.getRecommendations(), tgtDataset, mDataset);
+				rpsList.add(rps);
+			}
+			rpsMap.put(c, rpsList);
+		}
+		
+		return rpsMap;
+	}
+	
+	public Map<Constraint, List<List<RecommendationPattern>>> runDataCleaningMapWithPatterns (TargetDataset tgtDataset, MasterDataset mDataset, float simThreshold, SearchType searchType) {
+		return runDataCleaningMapWithPatterns(tgtDataset, mDataset, simThreshold, searchType, null);
+	}
+	
 	public static void main (String[] args) {
 		DataCleaningUtilsImpl dcu = new DataCleaningUtilsImpl();
 		
@@ -641,7 +672,8 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 		
 //		dcu.runDataCleaning(target, master, target.getConstraints().get(0));
 //		dcu.runDataCleaning(target, master, 0.6f, SearchType.SA_WEIGHTED);
-		dcu.runDataCleaning(target, master, 0.6f, SearchType.BRUTE_FORCE);
+//		dcu.runDataCleaning(target, master, 0.6f, SearchType.BRUTE_FORCE);
+		System.out.println(dcu.runDataCleaningMapWithPatterns(target, master, 0.6f, SearchType.BRUTE_FORCE));
 //		dcu.runDataCleaning(target, master, 0.00001f, SearchType.SA_EPS_DYNAMIC);
 	}
 	
