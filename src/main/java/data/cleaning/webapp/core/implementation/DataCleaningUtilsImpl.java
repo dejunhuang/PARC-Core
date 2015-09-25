@@ -28,6 +28,7 @@ import data.cleaning.core.service.repair.impl.Violations;
 import data.cleaning.core.utils.Config;
 import data.cleaning.core.utils.Pair;
 import data.cleaning.core.utils.objectives.ChangesObjective;
+import data.cleaning.core.utils.objectives.CleaningObjective;
 import data.cleaning.core.utils.objectives.CustomCleaningObjective;
 import data.cleaning.core.utils.objectives.Objective;
 import data.cleaning.core.utils.objectives.PrivacyObjective;
@@ -45,6 +46,18 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 	private DatasetService datasetService = new DatasetServiceImpl();
 	private RepairService repairService = new RepairServiceImpl();
 	private MatchingService matchingService = new MatchingServiceImpl();
+	
+	private Search initBruteForceSearch(MasterDataset mDataset, Constraint constraint,  
+			double alphaPvt, double betaInd, double gamaSize) {
+		List<Objective> objective = constructNonCustomizedWeightedObjective(
+				constraint, mDataset, alphaPvt, betaInd, gamaSize);
+		Search search = new BruteForceSearch (objective, Config.IND_NORM_STRAT);
+		return search;
+	}
+	
+	private Search initBruteForceSearch(MasterDataset mDataset, Constraint constraint) {
+		return initBruteForceSearch(mDataset, constraint, Config.ALPHA_PVT, Config.BETA_IND, Config.GAMMA_SIZE);
+	}
 	
 	private Search initSimulAnneal(MasterDataset mDataset, Constraint constraint) {
 		double startTemp = Config.START_TEMP_EVP * (double) (1d);
@@ -177,6 +190,23 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 				constraint, table);
 		Objective indFn = new CustomCleaningObjective(0d, betaInd,
 				true, constraint, table);
+		Objective changesFn = new ChangesObjective(0d, gamaSize, true,
+				constraint, table);
+		weightedFns.add(pvtFn);
+		weightedFns.add(indFn);
+		weightedFns.add(changesFn);
+
+		return weightedFns;
+	}
+	
+	private List<Objective> constructNonCustomizedWeightedObjective(Constraint constraint,
+			MasterDataset mDataset, double alphaPvt, double betaInd, double gamaSize) {
+		InfoContentTable table = datasetService.calcInfoContentTable(constraint, mDataset);
+		List<Objective> weightedFns = new ArrayList<Objective>();
+		Objective pvtFn = new PrivacyObjective(0d, alphaPvt, true,
+				constraint, table);
+		Objective indFn = new CleaningObjective(0d, betaInd,
+				true, constraint,table);
 		Objective changesFn = new ChangesObjective(0d, gamaSize, true,
 				constraint, table);
 		weightedFns.add(pvtFn);
@@ -320,7 +350,15 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 				}
 			}
 			else if (searchType == SearchType.BRUTE_FORCE) {
-				search = new BruteForceSearch();
+				if (params == null) {
+					search = initBruteForceSearch(mDataset, constraint);
+				}
+				else {
+					double alphaPvt = params.get("alphaPvt");
+					double betaInd = params.get("betaInd");
+					double gamaSize = params.get("gamaSize");
+					search = initBruteForceSearch(mDataset, constraint, alphaPvt, betaInd, gamaSize);
+				}
 			}
 			else {
 				search = initSimulAnneal(mDataset, constraint);
@@ -554,7 +592,15 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 				}
 			}
 			else if (searchType == SearchType.BRUTE_FORCE) {
-				search = new BruteForceSearch();
+				if (params == null) {
+					search = initBruteForceSearch(mDataset, constraint);
+				}
+				else {
+					double alphaPvt = params.get("alphaPvt");
+					double betaInd = params.get("betaInd");
+					double gamaSize = params.get("gamaSize");
+					search = initBruteForceSearch(mDataset, constraint, alphaPvt, betaInd, gamaSize);
+				}
 			}
 			else {
 				search = initSimulAnneal(mDataset, constraint);
