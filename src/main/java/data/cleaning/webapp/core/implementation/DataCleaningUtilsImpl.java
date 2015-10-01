@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.Multimap;
 
 import data.cleaning.core.service.dataset.DatasetService;
@@ -31,6 +33,7 @@ import data.cleaning.core.service.repair.impl.RepairServiceImpl;
 import data.cleaning.core.service.repair.impl.Violations;
 import data.cleaning.core.utils.Config;
 import data.cleaning.core.utils.Pair;
+import data.cleaning.core.utils.ProdLevel;
 import data.cleaning.core.utils.objectives.ChangesObjective;
 import data.cleaning.core.utils.objectives.CleaningObjective;
 import data.cleaning.core.utils.objectives.CustomCleaningObjective;
@@ -47,9 +50,12 @@ import data.cleaning.core.utils.search.SimulAnnealWeighted;
 import data.cleaning.webapp.core.DataCleaningUtils;
 
 public class DataCleaningUtilsImpl implements DataCleaningUtils{
-	private DatasetService datasetService = new DatasetServiceImpl();
-	private RepairServiceImpl repairService = new RepairServiceImpl();
-	private MatchingService matchingService = new MatchingServiceImpl();
+	public DatasetService datasetService = new DatasetServiceImpl();
+	public RepairServiceImpl repairService = new RepairServiceImpl();
+	public MatchingService matchingService = new MatchingServiceImpl();
+	
+	private static final Logger logger = Logger
+			.getLogger(DataCleaningUtilsImpl.class);
 	
 	private Search initBruteForceSearch(MasterDataset mDataset, Constraint constraint,  
 			double alphaPvt, double betaInd, double gamaSize) {
@@ -374,20 +380,20 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 			
 			//TODO: Delete this code later
 			// for testing
-			for (Candidate c: candidates) {
-				System.out.println("---------------------");
-//				System.out.println(c.getDebugging());
-				System.out.println(c.toString());
-				System.out.println("Pvt: " + c.getPvtOut());
-				System.out.println("inD: " + c.getIndOut());
-				System.out.println("Changes: " + c.getChangesOut());
-				
-				List<Recommendation> rs = c.getRecommendations();
-				List<RecommendationPattern> rps = repairService.getRecommendationPatterns(rs, tgtDataset, mDataset);
-				System.out.println("RecommendationPatterns: " + rps);
-				
-				System.out.println();
-			}
+//			for (Candidate c: candidates) {
+//				System.out.println("---------------------");
+////				System.out.println(c.getDebugging());
+//				System.out.println(c.toString());
+//				System.out.println("Pvt: " + c.getPvtOut());
+//				System.out.println("inD: " + c.getIndOut());
+//				System.out.println("Changes: " + c.getChangesOut());
+//				
+//				List<Recommendation> rs = c.getRecommendations();
+//				List<RecommendationPattern> rps = repairService.getRecommendationPatterns(rs, tgtDataset, mDataset);
+//				System.out.println("RecommendationPatterns: " + rps);
+//				
+//				System.out.println();
+//			}
 			
 			sb.append(candidates.toString() + "\n");
 			sb.append("\n");
@@ -521,18 +527,18 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 		System.out.println("searchType: " + searchType.toString());
 		
 		for (Constraint constraint: constraints) {
-			System.out.println("--------------------------------------------");
-			System.out.println("Constraint: " + constraint.toString());
-			
+//			System.out.println("--------------------------------------------");
+//			System.out.println("Constraint: " + constraint.toString());
+//			
 			Violations vios = findVios(tgtDataset, constraint);
-			System.out.println("Violations: " + vios);
-			
+//			System.out.println("Violations: " + vios);
+//			
 			List<Record> vioRecs = getVioRecords(tgtDataset, vios);
-			System.out.println("Violation Records: " + vioRecs);
-			
+//			System.out.println("Violation Records: " + vioRecs);
+//			
 			List<Match> matches = getMatching(constraint, vioRecs, mDataset.getRecords(), simThreshold, 
 					tgtDataset.getName(), mDataset.getName());
-			System.out.println("Matching: " + matches);
+//			System.out.println("Matching: " + matches);
 			
 			Search search;
 			if (searchType == SearchType.SA_WEIGHTED) {
@@ -616,6 +622,7 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 			}
 			
 			Set<Candidate> candidates = getRecommendations (constraint, matches, search, tgtDataset, mDataset, false);
+			logger.log(ProdLevel.PROD, "In constraint: " + constraint.toString() + " # of candidates: " + candidates.size());
 			System.out.println(candidates.toString());
 			
 			result.put(constraint, candidates);
@@ -657,23 +664,45 @@ public class DataCleaningUtilsImpl implements DataCleaningUtils{
 		char quoteChar = '"';
 		
 //		String tgtUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/testdata1/addressTarget.csv";
-		String tgtUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0923/target_0923.csv";
+//		String tgtUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0923/target_0923.csv";
+		String tgtUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0926/Japan_trials.csv";
+//		String tgtUrl = "./data/Japan_trials.csv";
 		String tgtFileName = "addressTarget";
 
 //		String mUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/testdata1/addressMaster.csv";
-		String mUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0923/master_0923.csv";
+//		String mUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0923/master_0923.csv";
+		String mUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0926/Japan_trials_clean.csv";
+//		String mUrl = "./data/Japan_trials_clean.csv";
 		String mFileName = "addressMaster";
 		
 //		String fdUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/testdata1/address_fd.csv";
-		String fdUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0923/fd_0923.csv";
+//		String fdUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0923/fd_0923.csv";
+		String fdUrl = "/Users/thomas/Documents/Programming/DataPrivacy/resource/data/demo_0926/fds.csv";
+//		String fdUrl = "./data/fds.csv";
 		
 		TargetDataset target = dcu.loadTargetDataset(tgtUrl, tgtFileName, fdUrl, separator, quoteChar);
 		MasterDataset master = dcu.loadMasterDataset(mUrl, mFileName, fdUrl, 1, separator, quoteChar);
 		
+		// verify wheather the data is clean
+		logger.log(ProdLevel.PROD, ("-----------------"));
+		logger.log(ProdLevel.PROD, ("In master dataset:"));
+		for (Constraint c: master.getConstraints()) {
+			boolean clean = dcu.datasetService.isSatisfied(c, master.getRecords());
+			logger.log(ProdLevel.PROD, "For constraint:" + c.toString() + " - Clean:" + clean);
+		}
+		
+		// verify wheather the data is clean
+		logger.log(ProdLevel.PROD, ("-----------------"));
+		logger.log(ProdLevel.PROD, ("In target dataset:"));
+		for (Constraint c: target.getConstraints()) {
+			boolean clean = dcu.datasetService.isSatisfied(c, target.getRecords());
+			logger.log(ProdLevel.PROD, ("For constraint:" + c.toString() + " - Clean:" + clean));
+		}
+		
 //		dcu.runDataCleaning(target, master, target.getConstraints().get(0));
 //		dcu.runDataCleaning(target, master, 0.6f, SearchType.SA_WEIGHTED);
 //		dcu.runDataCleaning(target, master, 0.6f, SearchType.BRUTE_FORCE);
-		System.out.println(dcu.runDataCleaningMapWithPatterns(target, master, 0.6f, SearchType.BRUTE_FORCE));
+		dcu.runDataCleaningMap(target, master, 0.5f, SearchType.SA_WEIGHTED);
 //		dcu.runDataCleaning(target, master, 0.00001f, SearchType.SA_EPS_DYNAMIC);
 	}
 	
