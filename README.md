@@ -1,6 +1,6 @@
 ## PARC-Core
 
-This is a project specialized for [PARC-WebApp](https://github.com/dejunhuang/PARC-WebApp) application. It includes the core utility for a [Privacy-preserving Data Cleaning framework](http://macsphere.mcmaster.ca/bitstream/11375/18075/2/gairola_dhruv_201507_msc_computer_science.pdf). It provides the wrapper for main features in the paper.
+This is a project specialized for [PARC-WebApp](https://github.com/dejunhuang/PARC-WebApp) application. It includes the core utilities for a [Privacy-preserving Data Cleaning framework](http://macsphere.mcmaster.ca/bitstream/11375/18075/2/gairola_dhruv_201507_msc_computer_science.pdf). It provides the wrapper library for main features in the paper implemented in the [privacyCleaning](https://github.com/dhruvgairola/privacyCleaning) project.
 
 ### Working Environment
 
