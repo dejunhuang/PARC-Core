@@ -16,6 +16,8 @@ To check if you install maven correctly, use the following command in your termi
 mvn -version
 ```
 
+Install the dependency into the local repository: [privacyCleaning](https://github.com/dhruvgairola/privacyCleaning)
+
 Install the project into the local maven repository:
 
 ```
