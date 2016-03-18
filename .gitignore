@@ -1,6 +1,11 @@
-*.DS_Store
-target/
+# Eclipse gen files
 .project
 .classpath
 .settings/
+
+# output files
+target/
 *.out
+
+# other files
+*.DS_Store
