@@ -9,3 +9,4 @@ target/
 
 # other files
 *.DS_Store
+/bin/
